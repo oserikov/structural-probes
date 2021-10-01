@@ -371,18 +371,11 @@ class BERTDataset(SubwordDataset):
     '''
     if subword_tokenizer == None:
       try:
-        from pytorch_pretrained_bert import BertTokenizer
-        if self.args['model']['hidden_dim'] == 768:
-          subword_tokenizer = BertTokenizer.from_pretrained('bert-base-cased')
-          print('Using BERT-base-cased tokenizer to align embeddings with PTB tokens')
-        elif self.args['model']['hidden_dim'] == 1024:
-          subword_tokenizer = BertTokenizer.from_pretrained('bert-large-cased')
-          print('Using BERT-large-cased tokenizer to align embeddings with PTB tokens')
-        else:
-          print("The heuristic used to choose BERT tokenizers has failed...")
-          exit()
+        from transformers import AutoTokenizer
+        subword_tokenizer = AutoTokenizer.from_pretrained(self.args['model']['tokenizer'])
+        print('Using BERT-large-cased tokenizer to align embeddings with PTB tokens')
       except:
-        print('Couldn\'t import pytorch-pretrained-bert. Exiting...')
+        print('Couldn\'t import transformers. Exiting...')
         exit()
     hf = h5py.File(filepath, 'r')
     indices = list(hf.keys())
@@ -391,7 +384,7 @@ class BERTDataset(SubwordDataset):
       observation = observations[index]
       feature_stack = hf[str(index)]
       single_layer_features = feature_stack[elmo_layer]
-      tokenized_sent = subword_tokenizer.wordpiece_tokenizer.tokenize('[CLS] ' + ' '.join(observation.sentence) + ' [SEP]')
+      tokenized_sent = subword_tokenizer.tokenize('[CLS] ' + ' '.join(observation.sentence) + ' [SEP]')
       untokenized_sent = observation.sentence
       untok_tok_mapping = self.match_tokenized_to_untokenized(tokenized_sent, untokenized_sent)
       assert single_layer_features.shape[0] == len(tokenized_sent)
